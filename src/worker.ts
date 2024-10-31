@@ -34,7 +34,7 @@ function render(renderInfo: RenderInfo) {
     // 绘制横线
     ctx!.beginPath()
     ctx!.moveTo(scrollLeft, vrow.start)
-    ctx!.lineTo(canvas!.width, vrow.start)
+    ctx!.lineTo(canvas!.width + scrollLeft, vrow.start)
     ctx!.stroke()
   })
 
@@ -43,7 +43,7 @@ function render(renderInfo: RenderInfo) {
     // 绘制竖线
     ctx!.beginPath()
     ctx!.moveTo(vcolumn.start, 0)
-    ctx!.lineTo(vcolumn.start, canvas!.height)
+    ctx!.lineTo(vcolumn.start, canvas!.height + scrollTop)
     ctx!.stroke()
   })
 
