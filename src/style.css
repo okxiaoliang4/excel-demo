@@ -2,9 +2,15 @@ body {
   margin: 0;
 }
 
-.container {
+.app {
+  display: flex;
+  flex-direction: column;
   width: 100vw;
   height: 100vh;
+}
+
+.container {
+  flex: 1;
   position: relative;
   overflow: auto
 }
@@ -17,4 +23,22 @@ body {
   bottom: 0;
   width: 100vw;
   height: 100vh;
+}
+
+.input {
+  outline: 1px solid red;
+  /* border: none; */
+  background: #fff;
+  /* color: transparent; */
+  resize: none;
+  word-break: keep-all;
+  caret-color: #000;
+  padding: 5px;
+  margin: 0;
+  box-sizing: border-box;
+  border: none;
+}
+
+.input::-webkit-scrollbar {
+  display: none;
 }

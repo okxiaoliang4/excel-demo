@@ -35,6 +35,14 @@ export interface RenderInfo {
   virtualColumns: VirtualItem[];
   totalHeight: number;
   totalWidth: number;
-  scrollTop: number;
-  scrollLeft: number;
+  sheetState: {
+    scrollTop: number;
+    scrollLeft: number;
+    input: {
+      isInputing: boolean;
+      rowIndex: number;
+      columnIndex: number;
+      value: string;
+    }
+  };
 }

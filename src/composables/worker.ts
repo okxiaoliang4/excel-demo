@@ -22,7 +22,9 @@ function render(renderInfo: RenderInfo) {
   if (!ctx || !canvas) return
   console.time('render')
   ctx!.clearRect(0, 0, canvas!.width, canvas!.height)
-  const { virtualRows, virtualColumns, cells, scrollTop = 0, scrollLeft = 0 } = renderInfo
+  const { virtualRows, virtualColumns, cells, sheetState } = renderInfo
+  const { scrollTop = 0, scrollLeft = 0 } = sheetState
+
   ctx.save()
 
   ctx.fillStyle = '#000'
@@ -57,8 +59,10 @@ function render(renderInfo: RenderInfo) {
     const centerY = cell.y + (cell.height) / 2
     const cellPadding = 10
 
-    ctx!.fillStyle = '#333'
-    ctx!.fillText(cell.data?.m || '', cell.x + cellPadding, centerY)
+    if (cell) {
+      ctx!.fillStyle = '#333'
+      ctx!.fillText(cell.data?.m || '', cell.x + cellPadding, centerY)
+    }
   })
 
   // 绘制列标题行

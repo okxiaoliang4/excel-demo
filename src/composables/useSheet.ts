@@ -22,6 +22,12 @@ export function useSheet(options: UseSheetOptions) {
   const sheetState = ref({
     scrollTop: 0,
     scrollLeft: 0,
+    input: {
+      isInputing: false,
+      rowIndex: 0,
+      columnIndex: 0,
+      value: '',
+    }
   })
   const data = ref<CellData>(options.data)
 
@@ -60,8 +66,11 @@ export function useSheet(options: UseSheetOptions) {
         cells: toRaw(cells.value),
         virtualRows: virtualRows.value,
         virtualColumns: virtualColumns.value,
-        scrollTop: sheetState.value.scrollTop,
-        scrollLeft: sheetState.value.scrollLeft,
+        sheetState: {
+          scrollTop: sheetState.value.scrollTop,
+          scrollLeft: sheetState.value.scrollLeft,
+          input: toRaw(sheetState.value.input),
+        }
       }
     })
   }
@@ -70,7 +79,6 @@ export function useSheet(options: UseSheetOptions) {
     sheetState.value.scrollTop = (e.target as HTMLDivElement)?.scrollTop ?? 0
     sheetState.value.scrollLeft = (e.target as HTMLDivElement)?.scrollLeft ?? 0
   }
-
 
   const handleClick = (e: MouseEvent) => {
     // 获取canvas元素的边界信息
@@ -93,9 +101,15 @@ export function useSheet(options: UseSheetOptions) {
     console.log('Canvas click position:', { x: adjustedX, y: adjustedY });
 
     const cell = getCellByPosition(adjustedX, adjustedY)
-    console.log(adjustedX, adjustedY, cell);
     selectedCell.value = cell!
-    console.log("🚀 ~ handleClick ~ selectedCell.value:", selectedCell.value)
+    sheetState.value.input.isInputing = false
+  }
+
+  const handleDblClick = () => {
+    sheetState.value.input.isInputing = true
+    sheetState.value.input.value = selectedCell.value!.data?.v || ''
+    sheetState.value.input.rowIndex = selectedCell.value!.rowIndex
+    sheetState.value.input.columnIndex = selectedCell.value!.columnIndex
   }
 
   onMounted(() => {
@@ -115,6 +129,30 @@ export function useSheet(options: UseSheetOptions) {
     return cells.value.find((cell) => isInCell(x, y, cell))
   }
 
+  function handleInput(rowIndex: number, columnIndex: number, value: string) {
+    if (value.startsWith('=')) {
+      // TODO: 公式
+      const cell = data.value[rowIndex]?.[columnIndex] || createCell()
+      set(cell, 'm', value)
+      set(cell, 'v', value)
+      data.value[rowIndex][columnIndex] = cell
+    } else {
+      // 文本
+      const cell = data.value[rowIndex]?.[columnIndex] || createCell()
+      set(cell, 'm', value)
+      set(cell, 'v', value)
+      data.value[rowIndex][columnIndex] = cell
+    }
+    render()
+  }
+  function handleEnter(e: KeyboardEvent) {
+    (e.target as HTMLInputElement).blur()
+  }
+  function handleBlur() {
+    sheetState.value.input.isInputing = false
+    handleInput(sheetState.value.input.rowIndex, sheetState.value.input.columnIndex, sheetState.value.input.value)
+  }
+
   const keys = useMagicKeys()
   watch(keys['ctrl+b'], (value) => {
     if (value && selectedCell.value) {
@@ -124,10 +162,12 @@ export function useSheet(options: UseSheetOptions) {
   })
 
   watchEffect(() => {
+    console.log('render');
     render()
   })
 
   return {
+    sheetState,
     data,
     cells,
     selectedCell,
@@ -135,5 +175,9 @@ export function useSheet(options: UseSheetOptions) {
     toggleBold,
     handleScroll,
     handleClick,
+    handleDblClick,
+    handleInput,
+    handleEnter,
+    handleBlur,
   }
 }

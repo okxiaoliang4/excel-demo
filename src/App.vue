@@ -1,12 +1,14 @@
 <script lang="ts" setup>
 import { PartialKeys, useVirtualizer, VirtualizerOptions } from "@tanstack/vue-virtual";
-import { computed, ref } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { IndexRow, IndexColumn } from "./types";
 import { useElementSize } from "@vueuse/core";
 import { withDpr } from "./util";
 import { useSheet } from "./composables/useSheet";
+import { clamp } from "lodash-es";
 
 const canvasRef = ref<HTMLCanvasElement>()
+const inputRef = ref<HTMLInputElement>()
 const parentRef = ref<HTMLDivElement | null>(null);
 
 const size = useElementSize(parentRef)
@@ -89,8 +91,13 @@ const totalHeight = computed(() => rowVirtualizer.value.getTotalSize());
 const totalWidth = computed(() => columnVirtualizer.value.getTotalSize());
 
 const {
+  sheetState,
+  selectedCell,
   handleScroll,
   handleClick,
+  handleDblClick,
+  handleEnter,
+  handleBlur,
 } = useSheet({
   canvas: canvasRef,
   rowVirtualizer: rowVirtualizer,
@@ -103,37 +110,52 @@ const {
     length: 1
   }
 })
+
+watch(() => sheetState.value.input.isInputing, (v) => {
+  if (v) {
+    nextTick(() => {
+      inputRef.value?.focus()
+    })
+  }
+})
 </script>
 
 <template>
-  <div
-    ref="parentRef"
-    class="container"
-    @scroll="handleScroll"
-  >
-    <canvas
-      ref="canvasRef"
-      class="canvas"
-      :width="canvasWidth"
-      :height="canvasHeight"
-      :style="{
-        width: `${canvasWidth / dpr}px`,
-        height: `${canvasHeight / dpr}px`
-      }"
-      @click="handleClick"
-    />
-    <!-- <input
-      v-if="selectedCell"
-      v-model="input"
-      class="input"
-      :style="{
-        position: 'absolute',
-        left: `${(selectedCell.x) + 5}px`,
-        top: `${(selectedCell.y) + 5}px`,
-        width: `${selectedCell.width - 10}px`,
-        height: `${selectedCell.height - 10}px`,
-      }"
-    /> -->
-    <div :style="{ width: `${totalWidth}px`, height: `${totalHeight}px` }"></div>
+  <div class="app">
+    <div
+      ref="parentRef"
+      class="container"
+      @scroll="handleScroll"
+    >
+      <canvas
+        ref="canvasRef"
+        class="canvas"
+        :width="canvasWidth"
+        :height="canvasHeight"
+        :style="{
+          width: `${canvasWidth / dpr}px`,
+          height: `${canvasHeight / dpr}px`
+        }"
+        @click="handleClick"
+        @dblclick="handleDblClick"
+      />
+      <input
+        v-if="sheetState.input.isInputing"
+        v-model="sheetState.input.value"
+        ref="inputRef"
+        class="input"
+        resize="none"
+        :style="{
+          position: 'absolute',
+          left: `${clamp(selectedCell!.x, selectedCell!.x + (sheetState.scrollLeft - selectedCell!.x) + 30, canvasWidth)}px`,
+          top: `${clamp(selectedCell!.y, selectedCell!.y + (sheetState.scrollTop - selectedCell!.y) + 30, canvasHeight)}px`,
+          width: `${selectedCell!.width}px`,
+          height: `${selectedCell!.height}px`,
+        }"
+        @keydown.enter="handleEnter"
+        @blur="handleBlur"
+      />
+      <div :style="{ width: `${totalWidth}px`, height: `${totalHeight}px` }"></div>
+    </div>
   </div>
 </template>
