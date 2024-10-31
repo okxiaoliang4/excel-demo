@@ -11,8 +11,17 @@ export type IndexColumn = IndexMap<Column>
 export type Cell = { v: string, m: string, f: string }
 export type CellData = IndexMap<IndexMap<Cell>>
 
+export type CellInfo = {
+  rowIndex: number;
+  columnIndex: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  data?: Cell;
+}
 export interface RenderInfo {
-  data: any;
+  cells: CellInfo[];
   virtualRows: VirtualItem[];
   virtualColumns: VirtualItem[];
   totalHeight: number;
