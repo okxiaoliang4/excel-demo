@@ -1,10 +1,11 @@
 import RenderWorker from './worker.ts?url'
+import { evaluate } from 'mathjs';
 import { computed, onMounted, Ref, ref, toRaw, watch, watchEffect } from "vue";
 import { CellData, CellInfo } from "../types";
 import { set } from "lodash-es";
 import { Virtualizer } from "@tanstack/vue-virtual";
 import { useMagicKeys, useWebWorker } from '@vueuse/core';
-import { withDpr } from '../util';
+import { codeToPosition, withDpr } from '../util';
 
 interface UseSheetOptions {
   canvas: Ref<HTMLCanvasElement | undefined>
@@ -107,7 +108,7 @@ export function useSheet(options: UseSheetOptions) {
 
   const handleDblClick = () => {
     sheetState.value.input.isInputing = true
-    sheetState.value.input.value = selectedCell.value!.data?.v || ''
+    sheetState.value.input.value = selectedCell.value!.data?.f ?? selectedCell.value!.data?.v ?? ''
     sheetState.value.input.rowIndex = selectedCell.value!.rowIndex
     sheetState.value.input.columnIndex = selectedCell.value!.columnIndex
   }
@@ -129,12 +130,25 @@ export function useSheet(options: UseSheetOptions) {
     return cells.value.find((cell) => isInCell(x, y, cell))
   }
 
+  function getCell(rowIndex: number, columnIndex: number) {
+    return data.value[rowIndex]?.[columnIndex]
+  }
+
   function handleInput(rowIndex: number, columnIndex: number, value: string) {
     if (value.startsWith('=')) {
-      // TODO: 公式
+      // TODO: 公式, 还差依赖收集更新，输入更新的已完成
+      const formula = value.slice(1)
+      // 替换公式中的单元格引用
+      const expression = formula.replace(/[A-Z]\d+/g, (match) => {
+        const { columnIndex, rowIndex } = codeToPosition(match)
+        const cell = getCell(rowIndex, columnIndex)
+        return cell?.v ?? ''
+      })
+      const result = evaluate(expression, data.value)
       const cell = data.value[rowIndex]?.[columnIndex] || createCell()
-      set(cell, 'm', value)
-      set(cell, 'v', value)
+      set(cell, 'm', result)
+      set(cell, 'v', result)
+      set(cell, 'f', value)
       data.value[rowIndex][columnIndex] = cell
     } else {
       // 文本

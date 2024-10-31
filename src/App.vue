@@ -105,7 +105,9 @@ const {
   data: {
     1: {
       1: { v: "1", m: "1", f: "1" },
-      length: 1
+      2: { v: "2", m: "2", f: "2" },
+      3: { v: "3", m: "3", f: "=A1+B1*B1" },
+      length: 2
     },
     length: 1
   }
@@ -122,6 +124,9 @@ watch(() => sheetState.value.input.isInputing, (v) => {
 
 <template>
   <div class="app">
+    <div>
+      <input :value="selectedCell?.data?.f || selectedCell?.data?.v" />
+    </div>
     <div
       ref="parentRef"
       class="container"

@@ -95,7 +95,6 @@ function render(renderInfo: RenderInfo) {
   console.timeEnd('render')
 }
 
-
 /**
  * excel column alpha
  */
@@ -109,3 +108,4 @@ function getAlpha(num: number) {
   }
   return result
 }
+
