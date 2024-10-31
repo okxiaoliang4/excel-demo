@@ -17,6 +17,6 @@ export interface RenderInfo {
   virtualColumns: VirtualItem[];
   totalHeight: number;
   totalWidth: number;
-  scrollTop: number | null;
-  scrollLeft: number | null;
+  scrollTop: number;
+  scrollLeft: number;
 }

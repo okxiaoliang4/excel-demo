@@ -1,12 +1,13 @@
 <script lang="ts" setup>
 import { PartialKeys, useVirtualizer, VirtualizerOptions } from "@tanstack/vue-virtual";
 // import stringify from 'fast-json-stringify'
-import { computed, onMounted, ref, toRaw, watch, watchEffect } from "vue";
+import { computed, onMounted, ref, toRaw, watchEffect } from "vue";
 import RenderWorker from './worker.ts?worker'
 import { IndexRow, IndexColumn, CellData } from "./types";
 import { useElementSize } from "@vueuse/core";
 
 const canvasRef = ref<HTMLCanvasElement>()
+let offscreen: OffscreenCanvas | null = null
 const parentRef = ref<HTMLDivElement | null>(null);
 
 const size = useElementSize(parentRef)
@@ -68,6 +69,7 @@ const rowVirtualizerOptions = computed(() => {
     getScrollElement: () => parentRef.value,
     estimateSize: () => defaultHeight,
     overscan: 5,
+    paddingStart: 30,
     initialRect: {
       width: canvasWidth.value,
       height: canvasHeight.value
@@ -85,7 +87,7 @@ const rowVirtualizerOptions = computed(() => {
       }
       return () => resizeObserver?.disconnect()
     },
-    onChange(instance, sync) {
+    onChange() {
       render()
     }
   } satisfies PartialKeys<VirtualizerOptions<HTMLDivElement, HTMLDivElement>, 'onChange' | 'observeElementRect' | 'observeElementOffset' | 'scrollToFn'>
@@ -96,6 +98,7 @@ const columnVirtualizerOptions = computed(() => {
     count: columns.length,
     getScrollElement: () => parentRef.value,
     estimateSize: () => defaultWidth,
+    paddingStart: 30,
     overscan: 5,
     initialRect: {
       width: canvasWidth.value,
@@ -114,7 +117,7 @@ const columnVirtualizerOptions = computed(() => {
       }
       return () => resizeObserver?.disconnect()
     },
-    onChange(instance, sync) {
+    onChange() {
       render()
     }
   } satisfies PartialKeys<VirtualizerOptions<HTMLDivElement, HTMLDivElement>, 'onChange' | 'observeElementRect' | 'observeElementOffset' | 'scrollToFn'>
@@ -128,6 +131,7 @@ const virtualColumns = computed(() => columnVirtualizer.value.getVirtualItems())
 
 const totalHeight = computed(() => rowVirtualizer.value.getTotalSize());
 const totalWidth = computed(() => columnVirtualizer.value.getTotalSize());
+
 
 function render() {
   worker.postMessage({
@@ -143,7 +147,7 @@ function render() {
 }
 
 onMounted(() => {
-  const offscreen = canvasRef.value?.transferControlToOffscreen()
+  offscreen = canvasRef.value!.transferControlToOffscreen()!
   worker.postMessage({ command: 'init', canvas: offscreen, dpr }, [offscreen as Transferable]);
   render()
 })
