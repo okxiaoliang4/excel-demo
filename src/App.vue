@@ -47,8 +47,8 @@ const defaultWidth = 80
 const defaultHeight = 30
 
 
-const canvasWidth = computed(() => (size.width.value || window.innerWidth) * dpr)
-const canvasHeight = computed(() => (size.height.value || window.innerHeight) * dpr)
+const canvasWidth = computed(() => withDpr(size.width.value || window.innerWidth))
+const canvasHeight = computed(() => withDpr(size.height.value || window.innerHeight))
 
 
 const rowVirtualizerOptions = computed(() => {
@@ -56,7 +56,7 @@ const rowVirtualizerOptions = computed(() => {
     count: rows.length,
     getScrollElement: () => parentRef.value,
     estimateSize: () => defaultHeight,
-    overscan: 5,
+    overscan: 0,
     paddingStart: 30,
     initialRect: {
       width: canvasWidth.value,
@@ -67,8 +67,8 @@ const rowVirtualizerOptions = computed(() => {
       if (instance.scrollElement) {
         resizeObserver = new ResizeObserver((result) => {
           cb({
-            width: result[0].contentRect.width * dpr,
-            height: result[0].contentRect.height * dpr
+            width: withDpr(result[0].contentRect.width),
+            height: withDpr(result[0].contentRect.height)
           })
         })
         resizeObserver.observe(instance.scrollElement)
@@ -87,7 +87,7 @@ const columnVirtualizerOptions = computed(() => {
     getScrollElement: () => parentRef.value,
     estimateSize: () => defaultWidth,
     paddingStart: 30,
-    overscan: 5,
+    overscan: 0,
     initialRect: {
       width: canvasWidth.value,
       height: canvasHeight.value
@@ -97,8 +97,8 @@ const columnVirtualizerOptions = computed(() => {
       if (instance.scrollElement) {
         resizeObserver = new ResizeObserver((result) => {
           cb({
-            width: result[0].contentRect.width * dpr,
-            height: result[0].contentRect.height * dpr
+            width: withDpr(result[0].contentRect.width),
+            height: withDpr(result[0].contentRect.height)
           })
         })
         resizeObserver.observe(instance.scrollElement)
@@ -172,20 +172,41 @@ const handleClick = (e: MouseEvent) => {
   const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
 
   // 计算实际点击位置相对于canvas的坐标（考虑DPR）
-  const x = (e.clientX - rect.left) * dpr;
-  const y = (e.clientY - rect.top) * dpr;
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
 
   // 考虑滚动位置
-  const adjustedX = x + sheetState.value.scrollLeft * dpr;
-  const adjustedY = y + sheetState.value.scrollTop * dpr;
+  const adjustedX = withDpr(x + sheetState.value.scrollLeft);
+  const adjustedY = withDpr(y + sheetState.value.scrollTop);
+  // 左上角空白区域
+  const blank = withDpr(30)
+  if (adjustedX < blank || adjustedY < blank) {
+    // 点击空白区域或行号列标题区域
+    return
+  }
 
   console.log('Canvas click position:', { x: adjustedX, y: adjustedY });
 
-  // // 可以将这些坐标发送给worker进行处理
+  // 可以将这些坐标发送给worker进行处理
   // worker.postMessage({
   //   command: 'click',
   //   position: { x: adjustedX, y: adjustedY }
   // });
+  const cell = getCell(adjustedX, adjustedY)
+  console.log(adjustedX, adjustedY, cell);
+}
+
+function withDpr(value: number) {
+  return value * dpr
+}
+
+// 检测x,y是否在某个cell内
+function isInCell(x: number, y: number, cell: CellInfo) {
+  return x >= withDpr(cell.x) && x <= withDpr(cell.x) + withDpr(cell.width) && y >= withDpr(cell.y) && y <= withDpr(cell.y) + withDpr(cell.height)
+}
+// 根据坐标获取cell
+function getCell(x: number, y: number) {
+  return cells.value.find((cell) => isInCell(x, y, cell))
 }
 </script>
 
