@@ -137,15 +137,21 @@ export function useSheet(options: UseSheetOptions) {
   function handleInput(rowIndex: number, columnIndex: number, value: string) {
     if (value.startsWith('=')) {
       // TODO: 公式, 还差依赖收集更新，输入更新的已完成
-      const formula = value.slice(1)
-      // 替换公式中的单元格引用
-      const expression = formula.replace(/[A-Z]\d+/g, (match) => {
-        const { columnIndex, rowIndex } = codeToPosition(match)
-        const cell = getCell(rowIndex, columnIndex)
-        return cell?.v ?? ''
-      })
-      const result = evaluate(expression, data.value)
+      let result = ''
       const cell = data.value[rowIndex]?.[columnIndex] || createCell()
+      try {
+        const formula = value.slice(1)
+        // 替换公式中的单元格引用
+        const expression = formula.replace(/[A-Z]\d+/g, (match) => {
+          const { columnIndex, rowIndex } = codeToPosition(match)
+          const cell = getCell(rowIndex, columnIndex)
+          return cell?.v ?? ''
+        })
+        result = evaluate(expression, data.value)
+      } catch (error) {
+        result = '计算错误'
+        console.error(error)
+      }
       set(cell, 'm', result)
       set(cell, 'v', result)
       set(cell, 'f', value)
