@@ -15,7 +15,10 @@
     "fast-json-stringify": "^6.0.0",
     "lodash-es": "^4.17.21",
     "mathjs": "^13.2.0",
-    "vue": "^3.5.12"
+    "vue": "^3.5.12",
+    "y-protocols": "^1.0.6",
+    "y-websocket": "^2.0.4",
+    "yjs": "^13.6.20"
   },
   "devDependencies": {
     "@types/lodash-es": "^4.17.12",

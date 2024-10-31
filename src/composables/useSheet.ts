@@ -2,16 +2,17 @@ import RenderWorker from './worker.ts?url'
 import { evaluate } from 'mathjs';
 import { computed, onMounted, Ref, ref, toRaw, watch, watchEffect } from "vue";
 import { CellData, CellInfo } from "../types";
-import { set } from "lodash-es";
 import { Virtualizer } from "@tanstack/vue-virtual";
 import { useMagicKeys, useWebWorker } from '@vueuse/core';
 import { codeToPosition, withDpr } from '../util';
+import { Doc } from 'yjs'
 
 interface UseSheetOptions {
   canvas: Ref<HTMLCanvasElement | undefined>
   rowVirtualizer: Ref<Virtualizer<HTMLDivElement, HTMLDivElement>>
   columnVirtualizer: Ref<Virtualizer<HTMLDivElement, HTMLDivElement>>
   data: CellData
+  doc: Doc
 }
 
 function createCell() {
@@ -30,7 +31,31 @@ export function useSheet(options: UseSheetOptions) {
       value: '',
     }
   })
-  const data = ref<CellData>(options.data)
+
+  const data = ref<CellData>()
+
+  const yData = options.doc.getMap('data')
+  yData.observe((e) => {
+    console.log('yData changed', e);
+    data.value = updateData()
+  })
+  if (yData.size === 0) {
+    Object.entries(options.data).forEach(([rowKey, row]) => {
+      Object.entries(row).forEach(([colKey, cell]) => {
+        yData.set(`${rowKey},${colKey}`, cell)
+      })
+    })
+  }
+
+  function updateData() {
+    const result: CellData = {}
+    yData.forEach((value, key) => {
+      const [row, col] = key.split(',')
+      if (!result[row]) result[row] = {}
+      result[row][col] = value
+    })
+    return result
+  }
 
   const virtualRows = computed(() => options.rowVirtualizer.value.getVirtualItems());
   const virtualColumns = computed(() => options.columnVirtualizer.value.getVirtualItems());
@@ -56,8 +81,8 @@ export function useSheet(options: UseSheetOptions) {
 
   function toggleBold(rowIndex: number, columnIndex: number) {
     const cell = data.value[rowIndex]?.[columnIndex] || createCell()
-    set(cell, 's.b', !cell.s?.b)
-    data.value[rowIndex][columnIndex] = cell
+    const newCell = { ...cell, s: { ...cell.s, b: !cell.s?.b } }
+    yData.set(`${rowIndex},${columnIndex}`, newCell)
   }
 
   function render() {
@@ -82,20 +107,15 @@ export function useSheet(options: UseSheetOptions) {
   }
 
   const handleClick = (e: MouseEvent) => {
-    // 获取canvas元素的边界信息
     const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
 
-    // 计算实际点击位置相对于canvas的坐标（考虑DPR）
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // 考虑滚动位置
     const adjustedX = withDpr(x + sheetState.value.scrollLeft);
     const adjustedY = withDpr(y + sheetState.value.scrollTop);
-    // 左上角空白区域
     const blank = withDpr(30)
     if (adjustedX < blank || adjustedY < blank) {
-      // 点击空白区域或行号列标题区域
       return
     }
 
@@ -152,16 +172,12 @@ export function useSheet(options: UseSheetOptions) {
         result = '计算错误'
         console.error(error)
       }
-      set(cell, 'm', result)
-      set(cell, 'v', result)
-      set(cell, 'f', value)
-      data.value[rowIndex][columnIndex] = cell
+      const newCell = { ...cell, m: result, v: result, f: value }
+      yData.set(`${rowIndex},${columnIndex}`, newCell)
     } else {
-      // 文本
       const cell = data.value[rowIndex]?.[columnIndex] || createCell()
-      set(cell, 'm', value)
-      set(cell, 'v', value)
-      data.value[rowIndex][columnIndex] = cell
+      const newCell = { ...cell, m: value, v: value }
+      yData.set(`${rowIndex},${columnIndex}`, newCell)
     }
     render()
   }
@@ -183,6 +199,10 @@ export function useSheet(options: UseSheetOptions) {
 
   watchEffect(() => {
     console.log('render');
+    render()
+  })
+
+  yData.observe(() => {
     render()
   })
 

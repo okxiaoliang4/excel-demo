@@ -6,6 +6,8 @@ import { useElementSize } from "@vueuse/core";
 import { withDpr } from "./util";
 import { useSheet } from "./composables/useSheet";
 import { clamp } from "lodash-es";
+import { Doc } from 'yjs'
+import { WebsocketProvider } from 'y-websocket'
 
 const canvasRef = ref<HTMLCanvasElement>()
 const inputRef = ref<HTMLInputElement>()
@@ -90,6 +92,14 @@ const columnVirtualizer = useVirtualizer(columnVirtualizerOptions);
 const totalHeight = computed(() => rowVirtualizer.value.getTotalSize());
 const totalWidth = computed(() => columnVirtualizer.value.getTotalSize());
 
+const doc = new Doc()
+
+new WebsocketProvider(
+  'ws://localhost:1234', // 你的 WebSocket 服务器地址
+  'sheet-room', // 房间名称
+  doc
+)
+
 const {
   sheetState,
   selectedCell,
@@ -110,7 +120,8 @@ const {
       length: 2
     },
     length: 1
-  }
+  },
+  doc
 })
 
 watch(() => sheetState.value.input.isInputing, (v) => {
