@@ -1,0 +1,26 @@
+{
+  "name": "-execl-demo",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tanstack/vue-table": "^8.20.5",
+    "@tanstack/vue-virtual": "^3.10.8",
+    "@vueuse/core": "^11.1.0",
+    "fast-json-stringify": "^6.0.0",
+    "lodash-es": "^4.17.21",
+    "vue": "^3.5.12"
+  },
+  "devDependencies": {
+    "@types/lodash-es": "^4.17.12",
+    "@vitejs/plugin-vue": "^5.1.4",
+    "typescript": "~5.6.2",
+    "vite": "^5.4.9",
+    "vue-tsc": "^2.1.6"
+  }
+}
