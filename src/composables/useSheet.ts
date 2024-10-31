@@ -69,7 +69,6 @@ export function useSheet(options: UseSheetOptions) {
   const handleScroll = (e: Event) => {
     sheetState.value.scrollTop = (e.target as HTMLDivElement)?.scrollTop ?? 0
     sheetState.value.scrollLeft = (e.target as HTMLDivElement)?.scrollLeft ?? 0
-    render()
   }
 
 
