@@ -8,7 +8,15 @@ export type IndexRow = IndexMap<Row>
 export type Column = { w: number }
 export type IndexColumn = IndexMap<Column>
 
-export type Cell = { v: string, m: string, f: string }
+export type Cell = {
+  v: string,
+  m: string,
+  f?: string,
+  s?: {
+    b?: boolean,
+    fs?: number,
+  }
+}
 export type CellData = IndexMap<IndexMap<Cell>>
 
 export type CellInfo = {
@@ -19,6 +27,7 @@ export type CellInfo = {
   width: number;
   height: number;
   data?: Cell;
+  isSelected?: boolean;
 }
 export interface RenderInfo {
   cells: CellInfo[];

@@ -1,4 +1,4 @@
-import { RenderInfo } from "./types";
+import { RenderInfo } from "../types";
 
 let canvas: HTMLCanvasElement | null = null
 let ctx: CanvasRenderingContext2D | null = null
